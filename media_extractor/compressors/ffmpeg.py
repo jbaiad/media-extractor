@@ -43,7 +43,7 @@ def compress(path, logger):
 
     else:
         logger.info(f"Compressing {absolute_path}")
-        compress_file(absolute_path)
+        compress_file(absolute_path, logger)
 
 def get_compressed_filenames(absolute_dirpath, logger):
     compressed_filenames = set()
