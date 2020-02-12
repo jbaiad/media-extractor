@@ -60,12 +60,13 @@ def compress_file(absolute_filepath, logger):
     absolute_dirpath = os.path.dirname(absolute_filepath)
     filename = os.path.basename(absolute_filepath)
     temporary_filepath = os.path.join(absolute_dirpath, f".temp.{filename}")
-    command = f'/usr/bin/ffmpeg -stats -y -i "{absolute_filepath}" -vcodec libx265 -crf 24 "{temporary_filepath}"'
+    command = f'ffmpeg -stats -y -i "{absolute_filepath}" -vcodec libx265 -crf 24 "{temporary_filepath}"'
 
     logger.info(command)
     p = subprocess.Popen(command, shell=True, stderr=subprocess.STDOUT)
 
     if p.wait() == 0:
+        run_integrity_check(temporary_filepath, logger)
         parent_dir = os.path.dirname(absolute_filepath)
         filename = os.path.basename(absolute_filepath)
         with open(os.path.join(parent_dir, ".compressed"), "a") as compressed_filenames:
@@ -75,6 +76,18 @@ def compress_file(absolute_filepath, logger):
     else:
         p.kill()
         raise RuntimeError
+
+
+def run_integrity_check(absolute_filepath, logger):
+    command = f"ffmpeg -v error -i {absolute_filepath} -f null -"
+    logger.info(command)
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _, stderr = p.communicate()
+    if p.returncode != 0:
+        logger.error(stderr)
+        raise RuntimeError(f"Integrity check failed on {absolute_filepath}")
+    else:
+        logger.info(f"Integrity check passed for {absolute_filepath}")
 
 
 if __name__ == "__main__":
